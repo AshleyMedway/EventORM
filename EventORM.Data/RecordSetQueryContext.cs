@@ -17,9 +17,11 @@ namespace EventORM.Data
 
             var whereFinder = new InnermostWhereFinder();
             var whereExpression = whereFinder.GetInnermostWhere(expression);
-            var lambdaExpression = (LambdaExpression)((UnaryExpression)(whereExpression.Arguments[1])).Operand;
-
-            lambdaExpression = (LambdaExpression)Evaluator.PartialEval(lambdaExpression);
+            if (whereExpression != null)
+            {
+                var lambdaExpression = (LambdaExpression)((UnaryExpression)(whereExpression.Arguments[1])).Operand;
+                lambdaExpression = (LambdaExpression)Evaluator.PartialEval(lambdaExpression);
+            }
 
             var data = GetData<T>();
 
@@ -43,14 +45,15 @@ namespace EventORM.Data
                 if (prop.GetMethod.IsVirtual)
                     continue;
 
-                query += String.Format(" [{0}],", prop.Name);
+                query += String.Format(" [{0}_{1}],", type.Name, prop.Name);
             }
 
             query = query.TrimEnd(',');
             query += " FROM[dbo].[ApplicationContext]";
 
             var data = new List<T>();
-            using (var cmd = new SqlCommand(query, new SqlConnection("")))
+            //TODO: Hard coded strings
+            using (var cmd = new SqlCommand(query, new SqlConnection("Data Source=(local);Initial Catalog=test;Integrated Security=SSPI;MultipleActiveResultSets=true")))
             {
                 cmd.Connection.Open();
                 var reader = cmd.ExecuteReader();
@@ -61,7 +64,7 @@ namespace EventORM.Data
                         var row = Activator.CreateInstance<T>();
                         for (int x = 0; x < reader.FieldCount; x++)
                         {
-                            var propName = reader.GetDataTypeName(x);
+                            var propName = reader.GetName(x).Split('_').Last();
                             var propInfo = type.GetProperty(propName);
                             var propValue = reader.GetValue(x);
                             propInfo.SetValue(row, Convert.ChangeType(propValue, propInfo.PropertyType), null);
