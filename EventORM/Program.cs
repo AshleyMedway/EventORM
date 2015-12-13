@@ -1,4 +1,5 @@
 ﻿using EventORM.Context;
+using EventORM.Model;
 using System;
 
 namespace EventORM
@@ -8,8 +9,8 @@ namespace EventORM
         static void Main(string[] args)
         {
             var db = new ApplicationContext();
-            //db.SetupDatabase();
-
+            db.SetupDatabase();
+            db.Teachers.Add(new Teacher() { Name = "TEST" });
             var id = db.Teachers.GetNextId();
             Console.WriteLine(id);
             Console.ReadKey();

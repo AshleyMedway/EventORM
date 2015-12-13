@@ -29,7 +29,46 @@ namespace EventORM.Data
         {
             var type = typeof(T);
             var name = type.Name;
-            throw new NotImplementedException();
+            var key = String.Format("{0}Id", name);
+            var pKey = type.GetProperty(key);
+            var id = (int)pKey.GetValue(Entity);
+
+            var records = new Dictionary<string, object>();
+            records.Add(String.Format("{0}_{1}", name, key), id == 0 ? GetNextId() : id);
+
+            foreach (var prop in type.GetProperties())
+            {
+                var fieldName = String.Format("{0}_{1}", name, prop.Name);
+                if (prop.GetMethod.IsVirtual || records.ContainsKey(fieldName))
+                    continue;
+
+                var value = prop.GetValue(Entity);
+                records.Add(fieldName, value);
+            }
+
+            var query = String.Format("INSERT INTO [dbo].[{0}] (", _contextName);
+            var values = " VALUES (";
+            foreach (var item in records)
+            {
+                query += String.Format("[{0}],", item.Key);
+                if (item.Value is string)
+                    values += String.Format("'{0}',", item.Value);
+                else if (item.Value is int)
+                    values += String.Format("{0},", item.Value);
+                else
+                    throw new NotImplementedException();
+            }
+
+            query = query.TrimEnd(',');
+            values = values.TrimEnd(',');
+            query += String.Format("){0})", values);
+
+            using (var cmd = new SqlCommand(query, new SqlConnection(_connStr)))
+            {
+                cmd.Connection.Open();
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
         }
 
         public int GetNextId()

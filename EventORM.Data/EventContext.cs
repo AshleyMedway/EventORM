@@ -51,7 +51,7 @@ namespace EventORM.Data
         {
             var items = GetType()
                  .GetProperties()
-                 .Where(x => x.PropertyType.GetGenericTypeDefinition() == typeof(RecordSet<>));
+                 .Where(x => x.PropertyType.IsGenericType && x.PropertyType.GetGenericTypeDefinition() == typeof(RecordSet<>));
 
             var tableProperties = new Dictionary<string, PropertyInfo>();
 
@@ -130,7 +130,7 @@ namespace EventORM.Data
         private string GetDbType(Type clrType)
         {
             if (clrType == typeof(int))
-                return "[int]";
+                return "[int] DEFAULT 0";
             else if (clrType == typeof(string))
                 return "[nvarchar](max)";
 
